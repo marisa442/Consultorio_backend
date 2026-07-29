@@ -1,8 +1,6 @@
-import express from 'express';
+import { Router } from "express";
 import { getPacientes,getPacienteByid,getPacientesBusqueda,createPaciente,updatePaciente,deletePaciente } from '../controller/PacientesController.js';
-
 const router = express.Router();
-
 router.get("/paci",getPacientes);
 router.get("/paci/:id", getPacienteByid);
 router.get("/paci/buscar", getPacientesBusqueda);
