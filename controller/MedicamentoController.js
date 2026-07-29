@@ -1,4 +1,4 @@
-import Medicamento from '../models/MedicamentoModel.js';
+import  Medicamento from '../models/MedicamentoModel.js';
 
 
 
