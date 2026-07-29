@@ -24,3 +24,5 @@ export const Especialidad = sequelize.define(
         timestamps: true,
     }
 );
+
+module.exports = Especialista;

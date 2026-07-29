@@ -1,48 +1,45 @@
-import { DataTypes } from 'sequelize';
-import { sequelize } from '../db/conexion.js';
+const { DataTypes } = require('sequelize');
+const sequelize = require('../db/conexion');
+const Consulta = require('./Consulta');
 
-export const ConsultaExamen = sequelize.define(
-    'ConsultaExamen',
-    {
-        id_consulta_examen: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-        },
-        id_consulta: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        id_examen: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
-        },
-        fecha_solicitud: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW,
-        },
-        resultado: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        fecha_resultado: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        estado: {
-            type: DataTypes.ENUM(
-                'solicitado',
-                'realizado',
-                'entregado',
-                'cancelado'
-            ),
-            allowNull: false,
-            defaultValue: 'solicitado',
-        },
-    },
-    {
-        tableName: 'consulta_examenes',
-        timestamps: true,
+const ConsultaExamen = sequelize.define('ConsultaExamen', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  consulta_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Consulta,
+      key: 'id'
     }
-);
+  },
+  examen_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  fecha_solicitud: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+  resultado: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  fecha_resultado: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  estado: {
+    type: DataTypes.ENUM('solicitado', 'realizado', 'entregado', 'cancelado'),
+    allowNull: false,
+    defaultValue: 'solicitado',
+  }
+}, {
+  tableName: 'consulta_examenes',
+  timestamps: false
+});
+
+module.exports = ConsultaExamen;
