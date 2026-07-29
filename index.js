@@ -5,6 +5,7 @@ import { PORT } from './config/config.js';
 import { sequelize } from "./db/conexion.js";
 
 import { Medico } from './models/MedicoModel.js';
+import { Medicamento } from './models/MedicamentosModel.js';
 
 const _PORT = PORT || 3000;
 const app = express();
