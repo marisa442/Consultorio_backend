@@ -2,7 +2,7 @@ import { sequelize } from "sequelize";
 import { DataTypes,DATE } from "../db/conexion.js";
 
 
-export const Paciente = sequelize.define("Pacientes", {
+export const PacientesModel = sequelize.define("pacientes", {
   id: {
     autoIncrement: true,
     primaryKey: true,
