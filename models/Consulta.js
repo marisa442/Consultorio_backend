@@ -1,6 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../db/conexion');
-const Cita = require('./Cita');
+import { DataTypes } from 'sequelize';
+import sequelize from '../db/conexion.js';
 
 const Consulta = sequelize.define('Consulta', {
   id: {
@@ -11,11 +10,7 @@ const Consulta = sequelize.define('Consulta', {
   cita_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    unique: true, // Garantiza máximo una consulta por cita
-    references: {
-      model: Cita,
-      key: 'id'
-    }
+    unique: true,
   },
   sintomas: {
     type: DataTypes.TEXT,
@@ -42,4 +37,4 @@ const Consulta = sequelize.define('Consulta', {
   timestamps: false
 });
 
-module.exports = Consulta;
+export default Consulta;

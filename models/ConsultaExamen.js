@@ -1,6 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../db/conexion');
-const Consulta = require('./Consulta');
+import { DataTypes } from 'sequelize';
+import sequelize from '../db/conexion.js';
 
 const ConsultaExamen = sequelize.define('ConsultaExamen', {
   id: {
@@ -11,10 +10,6 @@ const ConsultaExamen = sequelize.define('ConsultaExamen', {
   consulta_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: Consulta,
-      key: 'id'
-    }
   },
   examen_id: {
     type: DataTypes.INTEGER,
@@ -42,4 +37,4 @@ const ConsultaExamen = sequelize.define('ConsultaExamen', {
   timestamps: false
 });
 
-module.exports = ConsultaExamen;
+export default ConsultaExamen;
