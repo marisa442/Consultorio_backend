@@ -2,7 +2,6 @@ import ConsultaExamen from "../models/ConsultaExamen.js";
 import Consulta from "../models/Consulta.js";
 import Examen from "../models/Examen.js";
 
-// Obtener todos los exámenes solicitados
 export const obtenerExamenesSolicitados = async (req, res) => {
   try {
     const examenes = await ConsultaExamen.findAll({
@@ -51,7 +50,6 @@ export const obtenerExamenSolicitadoPorId = async (req, res) => {
   }
 };
 
-// Obtener exámenes de una consulta
 export const obtenerExamenesPorConsulta = async (req, res) => {
   try {
 
