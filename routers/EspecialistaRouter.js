@@ -1,10 +1,5 @@
 import { Router } from 'express';
-import { 
-  obtenerEspecialidades, 
-  crearEspecialidad, 
-  actualizarEspecialidad, 
-  eliminarEspecialidad 
-} from '../controller/EspecialistaController.js';
+import { obtenerEspecialidades, crearEspecialidad, actualizarEspecialidad, eliminarEspecialidad } from '../controllers/EspecialistaController.js';
 
 const router = Router();
 

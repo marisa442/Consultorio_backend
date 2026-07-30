@@ -1,15 +1,14 @@
-import { sequelize } from "sequelize";
-import { DataTypes,DATE } from "../db/conexion.js";
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/conexion.js';
 
-
-export const PacientesModel = sequelize.define("pacientes", {
+const Paciente = sequelize.define('Paciente', {
   id: {
     autoIncrement: true,
     primaryKey: true,
     type: DataTypes.INTEGER,
   },
   numero_identificacion: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(20),
     allowNull: false,
     unique: true,
   },
@@ -26,12 +25,13 @@ export const PacientesModel = sequelize.define("pacientes", {
     allowNull: false,
   },
   sexo: {
-    type: DataTypes.STRING(1),
+    type: DataTypes.ENUM('M', 'F'),
     allowNull: false,
   },
   correo_electronico: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
     validate: { isEmail: true },
   },
   telefono: {
@@ -39,13 +39,16 @@ export const PacientesModel = sequelize.define("pacientes", {
     allowNull: true,
   },
   direccion: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   tipo_paciente: {               
     type: DataTypes.ENUM("estudiante", "docente", "administrativo"),
-    allowNull: false,
+    allowNull: true,
   },
 }, {
+  tableName: 'pacientes',
   timestamps: false,
 });
+
+export default Paciente;

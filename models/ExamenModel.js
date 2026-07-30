@@ -1,11 +1,16 @@
-import { DataTypes,DATE } from "sequelize";
-import { sequelize } from "../db/conexion.js"; 
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/conexion.js';
 
-export const ExamenModel = sequelize.define("examenes", {
-  codigo: {
-    type: DataTypes.STRING,     
+const Examen = sequelize.define('Examen', {
+  id: { 
+    type: DataTypes.INTEGER,
     primaryKey: true,
+    autoIncrement: true,
+  },
+  codigo: {
+    type: DataTypes.STRING,
     allowNull: false,
+    unique: true,
   },
   nombre: {
     type: DataTypes.STRING,
@@ -20,6 +25,8 @@ export const ExamenModel = sequelize.define("examenes", {
     allowNull: false,
   }
 }, {
-  timestamps: false,
-}
-);
+  tableName: 'examens',
+  timestamps: true,
+});
+
+export default Examen;

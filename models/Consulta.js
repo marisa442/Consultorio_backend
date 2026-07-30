@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../db/conexion.js';
+import { sequelize } from '../db/conexion.js';
 
 const Consulta = sequelize.define('Consulta', {
   id: {
@@ -33,8 +33,8 @@ const Consulta = sequelize.define('Consulta', {
     defaultValue: DataTypes.NOW,
   }
 }, {
-  tableName: 'consultas',
-  timestamps: false
+  tableName: 'Consulta',
+  timestamps: true
 });
 
 export default Consulta;

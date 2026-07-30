@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../db/conexion.js';
+import { sequelize } from '../db/conexion.js';
 
 const ConsultaExamen = sequelize.define('ConsultaExamen', {
   id: {
@@ -34,7 +34,7 @@ const ConsultaExamen = sequelize.define('ConsultaExamen', {
   }
 }, {
   tableName: 'consulta_examenes',
-  timestamps: false
+  timestamps: true
 });
 
 export default ConsultaExamen;

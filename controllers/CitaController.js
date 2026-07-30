@@ -1,15 +1,14 @@
 import { Op } from "sequelize";
 import Cita from "../models/Cita.js";
-import Paciente from "../models/Paciente.js";
-import Medico from "../models/Medico.js";
+import PacientesModel from "../models/PacientesModel.js";
+import Medico from "../models/MedicoModel.js";
 
-// Obtener todas las citas
 export const obtenerCitas = async (req, res) => {
   try {
     const citas = await Cita.findAll({
       include: [
-        { model: Paciente },
-        { model: Medico }
+        { model: PacientesModel, as: 'paciente' },
+        { model: Medico, as: 'medico' }
       ]
     });
 
@@ -23,15 +22,14 @@ export const obtenerCitas = async (req, res) => {
   }
 };
 
-// Obtener una cita por ID
 export const obtenerCitaPorId = async (req, res) => {
   try {
     const { id } = req.params;
 
     const cita = await Cita.findByPk(id, {
       include: [
-        { model: Paciente },
-        { model: Medico }
+        { model: PacientesModel, as: 'paciente' },
+        { model: Medico, as: 'medico' }
       ]
     });
 
@@ -51,10 +49,8 @@ export const obtenerCitaPorId = async (req, res) => {
   }
 };
 
-// Crear una nueva cita
 export const crearCita = async (req, res) => {
   try {
-
     const {
       paciente_id,
       medico_id,
@@ -64,20 +60,27 @@ export const crearCita = async (req, res) => {
       motivo
     } = req.body;
 
-    if (
-      !paciente_id ||
-      !medico_id ||
-      !fecha_atencion ||
-      !hora_atencion ||
-      !motivo
-    ) {
+    if (!paciente_id || !medico_id || !fecha_atencion || !hora_atencion || !motivo) {
       return res.status(400).json({
         mensaje: "Todos los campos obligatorios deben ser proporcionados."
       });
     }
 
-    const modalidadesValidas = ["presencial", "virtual"];
+    const paciente = await PacientesModel.findByPk(paciente_id);
+    if (!paciente) {
+      return res.status(404).json({
+        mensaje: "El paciente no existe."
+      });
+    }
 
+    const medico = await Medico.findByPk(medico_id);
+    if (!medico) {
+      return res.status(404).json({
+        mensaje: "El médico no existe."
+      });
+    }
+
+    const modalidadesValidas = ["presencial", "virtual"];
     if (modalidad && !modalidadesValidas.includes(modalidad)) {
       return res.status(400).json({
         mensaje: "Modalidad no válida."
@@ -104,7 +107,6 @@ export const crearCita = async (req, res) => {
     const nuevaCita = await Cita.create({
       paciente_id,
       medico_id,
-      fecha_solicitud: new Date(),
       fecha_atencion,
       hora_atencion,
       modalidad: modalidad || "presencial",
@@ -125,12 +127,9 @@ export const crearCita = async (req, res) => {
   }
 };
 
-// Actualizar una cita
 export const actualizarCita = async (req, res) => {
   try {
-
     const { id } = req.params;
-
     const {
       medico_id,
       fecha_atencion,
@@ -149,7 +148,6 @@ export const actualizarCita = async (req, res) => {
 
     if (modalidad) {
       const modalidadesValidas = ["presencial", "virtual"];
-
       if (!modalidadesValidas.includes(modalidad)) {
         return res.status(400).json({
           mensaje: "Modalidad no válida."
@@ -158,7 +156,6 @@ export const actualizarCita = async (req, res) => {
     }
 
     if (medico_id && fecha_atencion && hora_atencion) {
-
       const citaExistente = await Cita.findOne({
         where: {
           id: {
@@ -181,11 +178,11 @@ export const actualizarCita = async (req, res) => {
     }
 
     await cita.update({
-      medico_id: medico_id ?? cita.medico_id,
-      fecha_atencion: fecha_atencion ?? cita.fecha_atencion,
-      hora_atencion: hora_atencion ?? cita.hora_atencion,
-      modalidad: modalidad ?? cita.modalidad,
-      motivo: motivo ?? cita.motivo
+      medico_id: medico_id !== undefined ? medico_id : cita.medico_id,
+      fecha_atencion: fecha_atencion !== undefined ? fecha_atencion : cita.fecha_atencion,
+      hora_atencion: hora_atencion !== undefined ? hora_atencion : cita.hora_atencion,
+      modalidad: modalidad !== undefined ? modalidad : cita.modalidad,
+      motivo: motivo !== undefined ? motivo : cita.motivo
     });
 
     return res.status(200).json({
@@ -201,10 +198,8 @@ export const actualizarCita = async (req, res) => {
   }
 };
 
-// Cambiar estado de la cita
 export const cambiarEstadoCita = async (req, res) => {
   try {
-
     const { id } = req.params;
     const { estado } = req.body;
 
@@ -246,20 +241,23 @@ export const cambiarEstadoCita = async (req, res) => {
   }
 };
 
-// Obtener citas por paciente
 export const obtenerCitasPorPaciente = async (req, res) => {
   try {
-
     const { paciente_id } = req.params;
+    const { estado } = req.query;
+
+    const where = { paciente_id };
+    if (estado) {
+      where.estado = estado;
+    }
 
     const citas = await Cita.findAll({
-      where: {
-        paciente_id
-      },
+      where,
       include: [
-        { model: Paciente },
-        { model: Medico }
-      ]
+        { model: PacientesModel, as: 'paciente' },
+        { model: Medico, as: 'medico' }
+      ],
+      order: [['fecha_atencion', 'DESC']]
     });
 
     return res.status(200).json(citas);
@@ -272,10 +270,8 @@ export const obtenerCitasPorPaciente = async (req, res) => {
   }
 };
 
-// Obtener citas por médico
 export const obtenerCitasPorMedico = async (req, res) => {
   try {
-
     const { medico_id } = req.params;
 
     const citas = await Cita.findAll({
@@ -283,8 +279,8 @@ export const obtenerCitasPorMedico = async (req, res) => {
         medico_id
       },
       include: [
-        { model: Paciente },
-        { model: Medico }
+        { model: PacientesModel, as: 'paciente' },
+        { model: Medico, as: 'medico' }
       ]
     });
 

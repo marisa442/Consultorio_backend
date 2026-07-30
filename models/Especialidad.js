@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../db/conexion.js';
+import { sequelize } from '../db/conexion.js';
 
-const Especialista = sequelize.define('Especialista', {
+const Especialidad = sequelize.define('Especialidad', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -18,7 +18,7 @@ const Especialista = sequelize.define('Especialista', {
   }
 }, {
   tableName: 'especialidades',
-  timestamps: false
+  timestamps: true
 });
 
-export default Especialista;
+export default Especialidad;

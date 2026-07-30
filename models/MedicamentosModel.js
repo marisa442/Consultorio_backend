@@ -21,11 +21,11 @@ const Medicamento = sequelize.define('Medicamento', {
     allowNull: true,
   },
   formaFarmaceutica: {
-    type: DataTypes.STRING(50), // Ejemplo: Jarabe, Pastillas, Inyectable, etc.
+    type: DataTypes.STRING(50),
     allowNull: false,
   },
   concentracion: {
-    type: DataTypes.STRING(50), // Ejemplo: 500mg, 10ml, etc.
+    type: DataTypes.STRING(50),
     allowNull: false,
   },
   stock: {
@@ -43,4 +43,4 @@ const Medicamento = sequelize.define('Medicamento', {
   timestamps: true,
 });
 
-export { Medicamento };
+export default Medicamento;

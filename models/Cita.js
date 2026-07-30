@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../db/conexion.js';
+import { sequelize } from '../db/conexion.js';
 
 const Cita = sequelize.define('Cita', {
   id: {
@@ -43,7 +43,7 @@ const Cita = sequelize.define('Cita', {
   }
 }, {
   tableName: 'citas',
-  timestamps: false
+  timestamps: true
 });
 
 export default Cita;

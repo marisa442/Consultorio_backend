@@ -1,10 +1,5 @@
 import { Router } from 'express';
-import { 
-  obtenerConsultas, 
-  obtenerConsultaPorId, 
-  crearConsulta, 
-  actualizarConsulta 
-} from '../controller/ConsultaController.js';
+import { obtenerConsultas, obtenerConsultaPorId, crearConsulta, actualizarConsulta } from '../controllers/ConsultaController.js';
 
 const router = Router();
 
