@@ -1,168 +1,66 @@
-import Medicamento from '../models/MedicamentosModel.js';
-import { Op } from 'sequelize';
+import { MedicamentoModel } from "../models/index.js";
 
 export const getMedicamentos = async (req, res) => {
   try {
-    const medicamentos = await Medicamento.findAll({
-      order: [['nombre', 'ASC']]
+    const medicamentos = await MedicamentoModel.findAll({
+      where: { estado: true },
+      order: [["nombre", "ASC"]],
     });
     res.status(200).json(medicamentos);
   } catch (error) {
-    res.status(500).json({ 
-      mensaje: 'Error al obtener los medicamentos', 
-      error: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const getMedicamentoById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const medicamento = await Medicamento.findByPk(id);
-
+    const medicamento = await MedicamentoModel.findByPk(req.params.id);
     if (!medicamento) {
-      return res.status(404).json({ mensaje: 'Medicamento no encontrado' });
+      return res.status(404).json({ message: "medicamento not found" });
     }
-
     res.status(200).json(medicamento);
   } catch (error) {
-    res.status(500).json({ 
-      mensaje: 'Error al buscar el medicamento', 
-      error: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const createMedicamento = async (req, res) => {
   try {
-    const { codigo, nombre, descripcion, formaFarmaceutica, concentracion, stock, precioUnitario } = req.body;
-
-    if (!codigo || !nombre || !formaFarmaceutica || !concentracion) {
-      return res.status(400).json({ 
-        mensaje: 'Los campos codigo, nombre, formaFarmaceutica y concentracion son obligatorios' 
-      });
+    const { codigo, nombre } = req.body;
+    if (!codigo || !nombre) {
+      return res.status(400).json({ message: "codigo and nombre are required" });
     }
-
-    const existente = await Medicamento.findOne({ 
-      where: { codigo } 
-    });
-    
-    if (existente) {
-      return res.status(400).json({ 
-        mensaje: 'Ya existe un medicamento con ese código' 
-      });
-    }
-
-    if (stock !== undefined && (isNaN(stock) || stock < 0)) {
-      return res.status(400).json({ 
-        mensaje: 'El stock debe ser un número positivo' 
-      });
-    }
-
-    if (precioUnitario !== undefined && (isNaN(precioUnitario) || precioUnitario < 0)) {
-      return res.status(400).json({ 
-        mensaje: 'El precio unitario debe ser un número positivo' 
-      });
-    }
-
-    const nuevoMedicamento = await Medicamento.create({
-      codigo: codigo.trim().toUpperCase(),
-      nombre: nombre.trim(),
-      descripcion: descripcion ? descripcion.trim() : null,
-      formaFarmaceutica: formaFarmaceutica.trim(),
-      concentracion: concentracion.trim(),
-      stock: stock || 0,
-      precioUnitario: precioUnitario || 0.00
-    });
-
-    res.status(201).json({
-      mensaje: 'Medicamento registrado exitosamente',
-      medicamento: nuevoMedicamento
-    });
+    const medicamento = await MedicamentoModel.create(req.body);
+    res.status(201).json({ message: "create", medicamento });
   } catch (error) {
-    res.status(400).json({ 
-      mensaje: 'Error al registrar el medicamento', 
-      error: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const updateMedicamento = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { codigo, nombre, descripcion, formaFarmaceutica, concentracion, stock, precioUnitario } = req.body;
-    const medicamento = await Medicamento.findByPk(id);
-
+    const medicamento = await MedicamentoModel.findByPk(req.params.id);
     if (!medicamento) {
-      return res.status(404).json({ mensaje: 'Medicamento no encontrado' });
+      return res.status(404).json({ message: "medicamento not found" });
     }
-
-    if (codigo && codigo !== medicamento.codigo) {
-      const existente = await Medicamento.findOne({ 
-        where: { 
-          codigo,
-          id: { [Op.ne]: id }
-        } 
-      });
-      
-      if (existente) {
-        return res.status(400).json({ 
-          mensaje: 'Ya existe otro medicamento con ese código' 
-        });
-      }
-    }
-
-    if (stock !== undefined && (isNaN(stock) || stock < 0)) {
-      return res.status(400).json({ 
-        mensaje: 'El stock debe ser un número positivo' 
-      });
-    }
-
-    if (precioUnitario !== undefined && (isNaN(precioUnitario) || precioUnitario < 0)) {
-      return res.status(400).json({ 
-        mensaje: 'El precio unitario debe ser un número positivo' 
-      });
-    }
-
-    const datosActualizados = {};
-    if (codigo) datosActualizados.codigo = codigo.trim().toUpperCase();
-    if (nombre) datosActualizados.nombre = nombre.trim();
-    if (descripcion !== undefined) datosActualizados.descripcion = descripcion ? descripcion.trim() : null;
-    if (formaFarmaceutica) datosActualizados.formaFarmaceutica = formaFarmaceutica.trim();
-    if (concentracion) datosActualizados.concentracion = concentracion.trim();
-    if (stock !== undefined) datosActualizados.stock = parseInt(stock);
-    if (precioUnitario !== undefined) datosActualizados.precioUnitario = parseFloat(precioUnitario);
-
-    await medicamento.update(datosActualizados);
-
-    res.status(200).json({
-      mensaje: 'Medicamento actualizado exitosamente',
-      medicamento
-    });
+    medicamento.set(req.body);
+    await medicamento.save();
+    res.status(200).json({ message: "update", medicamento });
   } catch (error) {
-    res.status(400).json({ 
-      mensaje: 'Error al actualizar el medicamento', 
-      error: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const deleteMedicamento = async (req, res) => {
   try {
-    const { id } = req.params;
-    const medicamento = await Medicamento.findByPk(id);
-
+    const medicamento = await MedicamentoModel.findByPk(req.params.id);
     if (!medicamento) {
-      return res.status(404).json({ mensaje: 'Medicamento no encontrado' });
+      return res.status(404).json({ message: "medicamento not found" });
     }
-
-    await medicamento.destroy();
-
-    res.status(200).json({ mensaje: 'Medicamento eliminado correctamente' });
+    medicamento.set({ estado: false });
+    await medicamento.save();
+    res.status(200).json({ message: "delete" });
   } catch (error) {
-    res.status(500).json({ 
-      mensaje: 'Error al eliminar el medicamento', 
-      error: error.message 
-    });
+    res.status(500).json({ error: error.message });
   }
 };

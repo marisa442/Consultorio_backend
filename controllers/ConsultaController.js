@@ -1,216 +1,158 @@
-import Consulta from "../models/Consulta.js";
-import Cita from "../models/Cita.js";
-import PacientesModel from "../models/PacientesModel.js";
-import Medico from '../models/MedicoModel.js';
-import { sequelize } from "../db/conexion.js";
+import {
+  ConsultaModel,
+  CitaModel,
+  PacienteModel,
+  MedicoModel,
+  DetalleRecetaModel,
+  MedicamentoModel,
+  ExamenSolicitadoModel,
+  ExamenModel,
+} from "../models/index.js";
+import { puedeVerCita } from "../utils/rbac.js";
 
-export const obtenerConsultas = async (req, res) => {
+const includeDetalle = [
+  {
+    model: CitaModel,
+    as: "cita",
+    include: [
+      { model: PacienteModel, as: "paciente" },
+      { model: MedicoModel, as: "medico" },
+    ],
+  },
+  {
+    model: DetalleRecetaModel,
+    as: "detalle_recetas",
+    include: { model: MedicamentoModel, as: "medicamento" },
+  },
+  {
+    model: ExamenSolicitadoModel,
+    as: "examenes_solicitados",
+    include: { model: ExamenModel, as: "examen" },
+  },
+];
+
+// Reconstruye el include de cita agregando el where de dueño segun el rol,
+// para que un medico/paciente solo vea las consultas de sus propias citas.
+const includeDetalleParaRol = (user) => {
+  const whereCita = {};
+  if (user.rol === "paciente") whereCita.paciente_id = user.paciente_id;
+  if (user.rol === "medico") whereCita.medico_id = user.medico_id;
+
+  const [citaInclude, ...resto] = includeDetalle;
+  if (Object.keys(whereCita).length === 0) return includeDetalle;
+  return [{ ...citaInclude, where: whereCita, required: true }, ...resto];
+};
+
+export const getConsultas = async (req, res) => {
   try {
-    const consultas = await Consulta.findAll({
-      include: [
-        { 
-          model: Cita,
-          as: 'cita',
-          include: [
-            { model: PacientesModel, as: 'paciente' },
-            { model: Medico, as: 'medico' }
-          ]
-        }
-      ],
-      order: [['fecha_atencion', 'DESC']]
+    const consultas = await ConsultaModel.findAll({
+      include: includeDetalleParaRol(req.user),
+      order: [["fecha_atencion", "DESC"]],
     });
-
-    return res.status(200).json(consultas);
-
+    res.status(200).json(consultas);
   } catch (error) {
-    return res.status(500).json({
-      mensaje: "Error al obtener las consultas",
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
-export const obtenerConsultaPorId = async (req, res) => {
+export const getConsultaById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const consulta = await Consulta.findByPk(id, {
-      include: [
-        { 
-          model: Cita,
-          as: 'cita',
-          include: [
-            { model: PacientesModel, as: 'paciente' },
-            { model: Medico, as: 'medico' }
-          ]
-        }
-      ]
+    const consulta = await ConsultaModel.findByPk(req.params.id, {
+      include: includeDetalle,
     });
-
     if (!consulta) {
-      return res.status(404).json({
-        mensaje: "Consulta no encontrada"
-      });
+      return res.status(404).json({ message: "consulta not found" });
     }
-
-    return res.status(200).json(consulta);
-
+    if (!puedeVerCita(req.user, consulta.cita)) {
+      return res.status(403).json({ message: "No tienes permiso para ver esta consulta" });
+    }
+    res.status(200).json(consulta);
   } catch (error) {
-    return res.status(500).json({
-      mensaje: "Error al obtener la consulta",
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
-export const crearConsulta = async (req, res) => {
-  const transaction = await sequelize.transaction();
-
+// Registra la consulta de una cita atendida (regla: maximo una consulta por cita)
+export const createConsulta = async (req, res) => {
   try {
-    const {
-      cita_id,
-      sintomas,
-      diagnostico,
-      observaciones,
-      recomendaciones,
-      medico_id
-    } = req.body;
-
-    if (!cita_id || !sintomas || !diagnostico) {
-      await transaction.rollback();
-      return res.status(400).json({
-        mensaje: "La cita, los síntomas y el diagnóstico son obligatorios."
-      });
+    const { cita_id, diagnostico } = req.body;
+    if (!cita_id || !diagnostico) {
+      return res.status(400).json({ message: "cita_id and diagnostico are required" });
     }
 
-    const cita = await Cita.findByPk(cita_id, { 
-      transaction,
-      include: [{ model: Medico, as: 'medico' }]
-    });
-
+    const cita = await CitaModel.findByPk(cita_id);
     if (!cita) {
-      await transaction.rollback();
-      return res.status(404).json({
-        mensaje: "La cita no existe."
-      });
+      return res.status(400).json({ message: "cita_id does not exist" });
+    }
+    if (cita.medico_id !== req.user.medico_id) {
+      return res
+        .status(403)
+        .json({ message: "solo el medico asignado a la cita puede registrar la consulta" });
+    }
+    if (cita.estado === "cancelada" || cita.estado === "no_asistida") {
+      return res
+        .status(400)
+        .json({ message: "no se puede registrar consulta de una cita cancelada o no asistida" });
     }
 
-    if (medico_id && cita.medico_id !== parseInt(medico_id)) {
-      await transaction.rollback();
-      return res.status(400).json({
-        mensaje: "El médico no coincide con el asignado a la cita."
-      });
+    const existente = await ConsultaModel.findOne({ where: { cita_id } });
+    if (existente) {
+      return res.status(400).json({ message: "esta cita ya tiene una consulta registrada" });
     }
 
-    if (!["solicitada", "confirmada"].includes(cita.estado)) {
-      await transaction.rollback();
-      return res.status(400).json({
-        mensaje: "Solo las citas solicitadas o confirmadas pueden registrarse como consulta."
-      });
-    }
+    const consulta = await ConsultaModel.create(req.body);
 
-    const consultaExistente = await Consulta.findOne({
-      where: {
-        cita_id
-      },
-      transaction
-    });
+    // al registrar la consulta, la cita queda marcada como atendida
+    cita.set({ estado: "atendida" });
+    await cita.save();
 
-    if (consultaExistente) {
-      await transaction.rollback();
-      return res.status(400).json({
-        mensaje: "Esta cita ya tiene una consulta registrada."
-      });
-    }
-
-    const nuevaConsulta = await Consulta.create({
-      cita_id,
-      sintomas,
-      diagnostico,
-      observaciones,
-      recomendaciones,
-      fecha_atencion: new Date()
-    }, { transaction });
-
-    cita.estado = "atendida";
-    await cita.save({ transaction });
-
-    await transaction.commit();
-
-    const consultaCompleta = await Consulta.findByPk(nuevaConsulta.id, {
-      include: [
-        { 
-          model: Cita,
-          as: 'cita',
-          include: [
-            { model: PacientesModel, as: 'paciente' },
-            { model: Medico, as: 'medico' }
-          ]
-        }
-      ]
-    });
-
-    return res.status(201).json({
-      mensaje: "Consulta registrada correctamente.",
-      consulta: consultaCompleta
-    });
-
+    res.status(201).json({ message: "create", consulta });
   } catch (error) {
-    await transaction.rollback();
-    return res.status(500).json({
-      mensaje: "Error al registrar la consulta",
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
-export const actualizarConsulta = async (req, res) => {
+export const updateConsulta = async (req, res) => {
   try {
-    const { id } = req.params;
-    const {
-      sintomas,
-      diagnostico,
-      observaciones,
-      recomendaciones
-    } = req.body;
-
-    const consulta = await Consulta.findByPk(id);
-
+    const consulta = await ConsultaModel.findByPk(req.params.id, {
+      include: { model: CitaModel, as: "cita" },
+    });
     if (!consulta) {
-      return res.status(404).json({
-        mensaje: "Consulta no encontrada."
-      });
+      return res.status(404).json({ message: "consulta not found" });
     }
-
-    await consulta.update({
-      sintomas: sintomas !== undefined ? sintomas : consulta.sintomas,
-      diagnostico: diagnostico !== undefined ? diagnostico : consulta.diagnostico,
-      observaciones: observaciones !== undefined ? observaciones : consulta.observaciones,
-      recomendaciones: recomendaciones !== undefined ? recomendaciones : consulta.recomendaciones
-    });
-
-    const consultaActualizada = await Consulta.findByPk(id, {
-      include: [
-        { 
-          model: Cita,
-          as: 'cita',
-          include: [
-            { model: PacientesModel, as: 'paciente' },
-            { model: Medico, as: 'medico' }
-          ]
-        }
-      ]
-    });
-
-    return res.status(200).json({
-      mensaje: "Consulta actualizada correctamente.",
-      consulta: consultaActualizada
-    });
-
+    if (consulta.cita.medico_id !== req.user.medico_id) {
+      return res
+        .status(403)
+        .json({ message: "solo el medico que atendio la cita puede editar la consulta" });
+    }
+    delete req.body.cita_id; // no se reasigna la cita de una consulta ya creada
+    consulta.set(req.body);
+    await consulta.save();
+    res.status(200).json({ message: "update", consulta });
   } catch (error) {
-    return res.status(500).json({
-      mensaje: "Error al actualizar la consulta",
-      error: error.message
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteConsulta = async (req, res) => {
+  try {
+    const consulta = await ConsultaModel.findByPk(req.params.id, {
+      include: { model: CitaModel, as: "cita" },
     });
+    if (!consulta) {
+      return res.status(404).json({ message: "consulta not found" });
+    }
+    // Antes esto era exclusivo de administrador (sin chequeo de dueño porque
+    // no hacia falta). Ahora que solo medico llega aqui, se valida que sea
+    // quien atendio la cita, igual que en updateConsulta.
+    if (consulta.cita.medico_id !== req.user.medico_id) {
+      return res
+        .status(403)
+        .json({ message: "solo el medico que atendio la cita puede eliminar la consulta" });
+    }
+    await consulta.destroy();
+    res.status(200).json({ message: "delete" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
