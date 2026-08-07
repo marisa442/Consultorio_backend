@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../db/conexion.js";
 
-export const MedicoModel = sequelize.define(
-  "medicos",
+export const PacienteModel = sequelize.define(
+  "pacientes",
   {
     id: {
       autoIncrement: true,
@@ -22,6 +22,14 @@ export const MedicoModel = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    fecha_nacimiento: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    sexo: {
+      type: DataTypes.ENUM("M", "F"),
+      allowNull: false,
+    },
     correo_electronico: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -32,13 +40,12 @@ export const MedicoModel = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    numero_licencia: {
+    direccion: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      allowNull: true,
     },
-    especialidad_id: {
-      type: DataTypes.INTEGER,
+    tipo_paciente: {
+      type: DataTypes.ENUM("estudiante", "docente", "administrativo"),
       allowNull: false,
     },
     estado: {

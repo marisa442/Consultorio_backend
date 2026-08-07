@@ -1,31 +1,22 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../db/conexion.js";
 
-export const ExamenModel = sequelize.define(
-  "examenes",
+export const EspecialidadModel = sequelize.define(
+  "especialidades",
   {
     id: {
       autoIncrement: true,
       primaryKey: true,
       type: DataTypes.INTEGER,
     },
-    codigo: {
+    nombre: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
-    nombre: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     descripcion: {
       type: DataTypes.TEXT,
       allowNull: true,
-    },
-    costo: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      defaultValue: 0,
     },
     estado: {
       type: DataTypes.BOOLEAN,
