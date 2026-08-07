@@ -18,3 +18,12 @@ export const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+// RBAC por ruta: uso `router.post('/x', verifyToken, verifyRol('administrador'), crearX)`.
+// Debe ir siempre despues de verifyToken (necesita req.user.rol ya decodificado del JWT).
+export const verifyRol = (...rolesPermitidos) => (req, res, next) => {
+  if (!req.user || !rolesPermitidos.includes(req.user.rol)) {
+    return res.status(403).json({ message: 'No tienes permiso para realizar esta accion' });
+  }
+  next();
+};
