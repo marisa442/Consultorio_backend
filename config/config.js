@@ -9,3 +9,9 @@ export const DB_USERNAME = process.env.DB_USERNAME;
 export const DB_PASSWORD = process.env.DB_PASSWORD;
 export const PORT = process.env.PORT;
 export const TOKEN_KEY = process.env.TOKEN_KEY;
+
+// Cadena de conexion completa de Supabase (Project Settings > Database > Connection string).
+// Si esta presente, tiene prioridad sobre las variables DB_* sueltas.
+export const DATABASE_URL = process.env.DATABASE_URL;
+export const PORT = process.env.PORT;
+export const TOKEN_KEY = process.env.TOKEN_KEY;
