@@ -1,12 +1,21 @@
-import { Router } from 'express';
-import { getMedicos, getMedicoById, createMedico, updateMedico, deleteMedico } from '../controllers/MedicoController.js'; 
+import express from "express";
+import {
+  getMedicos,
+  getMedicoById,
+  createMedico,
+  updateMedico,
+  deleteMedico,
+} from "../controller/MedicoController.js";
+import { verifyToken, verifyRol } from "../middleware/auth.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get('/', getMedicos);
-router.get('/:id', getMedicoById);
-router.post('/', createMedico);
-router.put('/:id', updateMedico);
-router.delete('/:id', deleteMedico);
+// Lectura abierta a los 3 roles: un paciente necesita ver el listado de
+// medicos (por especialidad) para elegir con quien solicitar su cita.
+router.get("/medicos", verifyToken, getMedicos);
+router.get("/medicos/:id", verifyToken, getMedicoById);
+router.post("/medicos", verifyToken, verifyRol("administrador"), createMedico);
+router.put("/medicos/:id", verifyToken, verifyRol("administrador"), updateMedico);
+router.delete("/medicos/:id", verifyToken, verifyRol("administrador"), deleteMedico);
 
 export default router;
